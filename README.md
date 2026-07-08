@@ -6,8 +6,8 @@ by string match. It benchmarks four prompting strategies and shows *which* strat
 *which* failure mode.
 
 ```bash
-text-to-sql                      # deterministic mock (reproduces the numbers below)
-text-to-sql --provider bedrock   # real Claude on AWS Bedrock (creds from .env / ~/.env)
+text-to-sql --provider bedrock   # real Claude on AWS Bedrock (the numbers below; creds from .env / ~/.env)
+text-to-sql                      # deterministic offline mock (a contrasting teaching fixture)
 text-to-sql --json
 ```
 
@@ -33,26 +33,37 @@ one it triggers:
 
 ## Measured results
 
-`text-to-sql` on 12 questions (deterministic mock):
+Real run — **Claude Haiku 4.5 on AWS Bedrock**, 12 questions (execution accuracy = do the generated
+and gold SQL return the same rows?). The `none / semantic / syntax` columns are execution accuracy
+*within* each question subset (plain questions / semantic-trap questions / syntax-trap questions):
 
-| strategy | exec acc | exact match | semantic | syntax |
-|---|---|---|---|---|
-| zero_shot | 41.7% | 16.7% | 0.00 | 0.00 |
-| **few_shot** | 75.0% | 50.0% | **1.00** | 0.00 |
-| **self_correct** | 66.7% | 41.7% | 0.00 | **1.00** |
-| **few_shot_self_correct** | **100.0%** | 75.0% | 1.00 | 1.00 |
+| strategy | exec acc | exact match | none | semantic | syntax |
+|---|---|---|---|---|---|
+| zero_shot | 83.3% | 25.0% | 0.80 | 0.75 | 1.00 |
+| **few_shot** | **100.0%** | 58.3% | 1.00 | 1.00 | 1.00 |
+| self_correct | 83.3% | 25.0% | 0.80 | 0.75 | 1.00 |
+| **few_shot_self_correct** | **100.0%** | 58.3% | 1.00 | 1.00 | 1.00 |
 
-Two findings, both in the `semantic` / `syntax` (by-failure-mode) columns:
+Two findings — the first one is where the real model **overturned** what the offline mock assumed:
 
-- **The failure modes are orthogonal and need different fixes.** Few-shot examples repair every
-  *semantic* error (0.00 → 1.00) but **zero** syntax errors. Self-correction repairs every
-  *syntax* error (0.00 → 1.00) but **zero** semantic errors. Neither alone clears 75%; only
-  **combining** them reaches **100%**. A single "just add examples" or "just retry" reflex leaves
-  half the failures on the table.
-- **String match badly under-counts.** Zero-shot scores **42% by execution but only 17% by exact
-  match** — string match flags correct-but-reworded SQL (`SELECT *` vs explicit columns,
-  whitespace) as wrong. If you grade text-to-SQL by string equality you'll understate a good
-  model by ~25 points and pick the wrong winner.
+- **On the real model, self-correction was a no-op — few-shot alone hit 100%.** Claude Haiku made
+  essentially **no syntax errors** (syntax-subset accuracy 1.00 even zero-shot), so there was nothing
+  for self-correction to catch: `self_correct` scored **83.3%, identical to zero-shot**. The residual
+  failures were all *semantic* (valid SQL, wrong rows — the semantic subset sat at 0.75), and few-shot
+  examples repaired those (→ 1.00), lifting the whole set to **100%**. The calibrated mock assumed the
+  two failure modes were orthogonal and *both* fixes were needed; the real model's failures were
+  purely semantic, so the "just add examples" reflex was, on this model, exactly right. That gap
+  between the assumed and the measured story is the reason to run it live.
+- **String match badly under-counts — even more on the real model.** Zero-shot scored **83% by
+  execution but only 25% by exact match**, a **58-point gap**: Claude rewords correct SQL constantly
+  (`SELECT *` vs explicit columns, whitespace, aliasing), and string equality flags all of it wrong.
+  Grade text-to-SQL by string match and you'll understate a good model by nearly 60 points and pick
+  the wrong winner.
+
+> The offline `--mock` path (a deterministic generator with *designed* orthogonal failure modes)
+> reproduces a contrasting table — zero_shot 41.7%, few_shot 75.0%, self_correct 66.7%, combined
+> 100.0% — where both fixes are needed. Keeping it makes the comparison explicit: the mock is a
+> teaching fixture; the numbers above are the real model's actual behavior.
 
 ## Real-model mode
 
