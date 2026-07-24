@@ -11,6 +11,13 @@ text-to-sql                      # deterministic offline mock (a contrasting tea
 text-to-sql --json
 ```
 
+
+## Architecture
+
+![architecture](docs/assets/architecture.png)
+
+*Interactive/exportable version: [`docs/assets/architecture.html`](docs/assets/architecture.html).*
+
 ## Why execution accuracy
 
 A query written with a different alias, column order, or whitespace **string-mismatches** the
