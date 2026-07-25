@@ -185,73 +185,97 @@
     <div class="header"><div class="header-row"><div class="pulse-dot"></div>
       <h1>Text-to-SQL — Architecture</h1>
       <div class="toolbar"><div class="toolbar-actions"><button onclick="copyAsImage(this)">📋 Copy</button><button onclick="downloadPNG(this)">🖼️ PNG</button><button onclick="downloadPDF(this)">📄 PDF</button></div><button class="toolbar-toggle" onclick="this.parentElement.classList.toggle('expanded')">⋯</button></div>
-    </div><p class="subtitle">Natural-language questions → SQL over SQLite, scored by EXECUTION accuracy — do the generated and gold SQL return the same rows? — not string match.</p></div>
-    <div class="diagram-container"><svg viewBox="0 0 1280 600">
+    </div><p class="subtitle">Natural-language questions to SQL over a real SQLite database, scored by EXECUTION accuracy: do the generated and gold queries return the same rows? Four prompting strategies, and which one fixes which failure mode.</p></div>
+    <div class="diagram-container"><svg viewBox="0 0 1370 755">
 <defs><marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#64748b"/></marker><marker id="loop" markerWidth="11" markerHeight="8" refX="9" refY="4" orient="auto"><polygon points="0 0, 11 4, 0 8" fill="#22d3ee"/></marker><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5"/></pattern></defs>
-<rect width="1280" height="600" fill="url(#grid)"/>
-<rect x="24" y="150" width="540" height="300" rx="12" fill="rgba(52,211,153,0.04)" stroke="#34d399" stroke-width="1" stroke-dasharray="8,4"/>
-<text x="38" y="168" fill="#34d399" font-size="10" font-weight="600">① NL → SQL  ·  few-shot + self-correct</text>
-<rect x="580" y="150" width="676" height="300" rx="12" fill="rgba(251,113,133,0.04)" stroke="#fb7185" stroke-width="1" stroke-dasharray="8,4"/>
-<text x="594" y="168" fill="#fb7185" font-size="10" font-weight="600">② EXECUTION ACCURACY  ·  do the rows match?</text>
-<line x1="215" y1="259" x2="250" y2="259" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="335" y1="157" x2="335" y2="228" stroke="#a78bfa" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<text x="335" y="194" fill="#94a3b8" font-size="8.5" text-anchor="middle">context</text>
-<line x1="420" y1="259" x2="455" y2="259" stroke="#fbbf24" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<line x1="625" y1="259" x2="660" y2="259" stroke="#34d399" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<text x="642" y="254" fill="#94a3b8" font-size="8.5" text-anchor="middle">run</text>
-<line x1="745" y1="157" x2="745" y2="228" stroke="#94a3b8" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<text x="745" y="194" fill="#94a3b8" font-size="8.5" text-anchor="middle">reference</text>
-<line x1="830" y1="259" x2="867" y2="259" stroke="#fb7185" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<text x="848" y="254" fill="#94a3b8" font-size="8.5" text-anchor="middle">rows</text>
-<line x1="952" y1="290" x2="952" y2="360" stroke="#22d3ee" stroke-width="1.5" marker-end="url(#arrowhead)"/>
-<rect x="45" y="228" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="45" y="228" width="170" height="62" rx="7" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
-<text x="130" y="248" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">NL Question</text>
-<text x="130" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">natural language</text>
-<rect x="250" y="95" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="250" y="95" width="170" height="62" rx="7" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
-<text x="335" y="115" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Few-shot Examples</text>
-<text x="335" y="131" fill="#94a3b8" font-size="9" text-anchor="middle">schema + samples</text>
-<rect x="250" y="228" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="250" y="228" width="170" height="62" rx="7" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
-<text x="335" y="248" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Claude Haiku</text>
-<text x="335" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">NL → SQL</text>
-<rect x="455" y="228" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="455" y="228" width="170" height="62" rx="7" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
-<text x="540" y="248" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Generated SQL</text>
-<text x="540" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">+ self-correction</text>
-<rect x="660" y="95" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="660" y="95" width="170" height="62" rx="7" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
-<text x="745" y="115" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Gold SQL</text>
-<text x="745" y="131" fill="#94a3b8" font-size="9" text-anchor="middle">reference</text>
-<rect x="660" y="228" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="660" y="228" width="170" height="62" rx="7" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1.5"/>
-<text x="745" y="248" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Execute</text>
-<text x="745" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">SQLite</text>
-<rect x="867" y="228" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="867" y="228" width="170" height="62" rx="7" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
-<text x="952" y="248" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Execution Accuracy</text>
-<text x="952" y="264" fill="#94a3b8" font-size="9" text-anchor="middle">same rows?</text>
-<rect x="867" y="360" width="170" height="62" rx="7" fill="#0f172a"/>
-<rect x="867" y="360" width="170" height="62" rx="7" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
-<text x="952" y="380" fill="#fff" font-size="11" font-weight="600" text-anchor="middle">Report</text>
-<text x="952" y="396" fill="#94a3b8" font-size="9" text-anchor="middle">83% → 100% few-shot</text>
-<text x="40" y="572" fill="#fff" font-size="10" font-weight="600">Legend</text>
-<rect x="106" y="563" width="15" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
-<text x="126" y="572" fill="#94a3b8" font-size="8.5">Frontend/UI</text>
-<rect x="223" y="563" width="15" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
-<text x="243" y="572" fill="#94a3b8" font-size="8.5">Backend</text>
-<rect x="312" y="563" width="15" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
-<text x="332" y="572" fill="#94a3b8" font-size="8.5">Data/Index</text>
-<rect x="422" y="563" width="15" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
-<text x="442" y="572" fill="#94a3b8" font-size="8.5">Model/Cloud</text>
-<rect x="539" y="563" width="15" height="10" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
-<text x="559" y="572" fill="#94a3b8" font-size="8.5">Safety/Gate</text>
-<rect x="656" y="563" width="15" height="10" rx="2" fill="rgba(251, 146, 60, 0.3)" stroke="#fb923c" stroke-width="1"/>
-<text x="676" y="572" fill="#94a3b8" font-size="8.5">Pipeline</text>
+<rect width="1370" height="755" fill="url(#grid)"/>
+<rect x="80" y="59" width="1190" height="158" rx="12" fill="rgba(167,139,250,0.04)" stroke="#a78bfa" stroke-width="1" stroke-dasharray="8,4"/>
+<text x="94" y="78" fill="#a78bfa" font-size="10" font-weight="600">① GENERATE</text>
+<rect x="89" y="299" width="1194" height="158" rx="12" fill="rgba(251,113,133,0.04)" stroke="#fb7185" stroke-width="1" stroke-dasharray="8,4"/>
+<text x="103" y="318" fill="#fb7185" font-size="10" font-weight="600">② EXECUTE BOTH, COMPARE ROWS</text>
+<rect x="79" y="529" width="622" height="158" rx="12" fill="rgba(34,211,238,0.04)" stroke="#22d3ee" stroke-width="1" stroke-dasharray="8,4"/>
+<text x="93" y="548" fill="#22d3ee" font-size="10" font-weight="600">③ THE READ</text>
+<line x1="274" y1="150" x2="445" y2="150" stroke="#94a3b8" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="359" y="143" fill="#cbd5e1" font-size="8.5" text-anchor="middle">×4</text>
+<line x1="595" y1="150" x2="775" y2="150" stroke="#a78bfa" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="685" y="143" fill="#cbd5e1" font-size="8.5" text-anchor="middle">same 12</text>
+<line x1="925" y1="150" x2="1095" y2="150" stroke="#fbbf24" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="1010" y="143" fill="#cbd5e1" font-size="8.5" text-anchor="middle">predictions</text>
+<line x1="1170" y1="184" x2="1170" y2="356" stroke="#fb7185" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="1229" y="273" fill="#cbd5e1" font-size="8.5" text-anchor="middle">execution accuracy</text>
+<line x1="1084" y1="390" x2="936" y2="390" stroke="#fb7185" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="1010" y="383" fill="#cbd5e1" font-size="8.5" text-anchor="middle">row sets</text>
+<line x1="764" y1="390" x2="595" y2="390" stroke="#fb7185" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="679" y="383" fill="#cbd5e1" font-size="8.5" text-anchor="middle">what failed</text>
+<line x1="445" y1="390" x2="265" y2="390" stroke="#22d3ee" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="355" y="383" fill="#cbd5e1" font-size="8.5" text-anchor="middle">vs</text>
+<line x1="190" y1="431" x2="190" y2="579" stroke="#22d3ee" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="208" y="508" fill="#cbd5e1" font-size="8.5" text-anchor="middle">so</text>
+<line x1="275" y1="620" x2="525" y2="620" stroke="#22d3ee" stroke-width="1.6" marker-end="url(#arrowhead)"/>
+<text x="400" y="613" fill="#cbd5e1" font-size="8.5" text-anchor="middle">and</text>
+<rect x="106" y="109" width="167" height="82" rx="7" fill="#0f172a"/>
+<rect x="106" y="109" width="167" height="82" rx="7" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="190" y="131" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">12 Questions</text>
+<text x="190" y="149" fill="#94a3b8" font-size="9.0" text-anchor="middle">tagged by failure mode</text>
+<text x="190" y="164" fill="#94a3b8" font-size="9.0" text-anchor="middle">plain · semantic · syntax</text>
+<rect x="445" y="109" width="150" height="82" rx="7" fill="#0f172a"/>
+<rect x="445" y="109" width="150" height="82" rx="7" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="520" y="131" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">4 Strategies</text>
+<text x="520" y="149" fill="#94a3b8" font-size="9.0" text-anchor="middle">zero_shot · few_shot</text>
+<text x="520" y="164" fill="#94a3b8" font-size="9.0" text-anchor="middle">self_correct · both</text>
+<rect x="775" y="116" width="150" height="67" rx="7" fill="#0f172a"/>
+<rect x="775" y="116" width="150" height="67" rx="7" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1.5"/>
+<text x="850" y="138" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Claude Haiku 4.5</text>
+<text x="850" y="156" fill="#94a3b8" font-size="9.0" text-anchor="middle">AWS Bedrock</text>
+<rect x="1095" y="116" width="150" height="67" rx="7" fill="#0f172a"/>
+<rect x="1095" y="116" width="150" height="67" rx="7" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1.5"/>
+<text x="1170" y="138" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Generated SQL</text>
+<text x="1170" y="156" fill="#94a3b8" font-size="9.0" text-anchor="middle">+ the gold query</text>
+<rect x="115" y="349" width="151" height="82" rx="7" fill="#0f172a"/>
+<rect x="115" y="349" width="151" height="82" rx="7" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="190" y="371" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">syntax failures</text>
+<text x="190" y="389" fill="#94a3b8" font-size="9.0" text-anchor="middle">none on the real model</text>
+<text x="190" y="404" fill="#94a3b8" font-size="9.0" text-anchor="middle">1.00 even zero-shot</text>
+<rect x="445" y="349" width="150" height="82" rx="7" fill="#0f172a"/>
+<rect x="445" y="349" width="150" height="82" rx="7" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="520" y="371" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">semantic failures</text>
+<text x="520" y="389" fill="#94a3b8" font-size="9.0" text-anchor="middle">valid SQL, WRONG rows</text>
+<text x="520" y="404" fill="#94a3b8" font-size="9.0" text-anchor="middle">few-shot: 0.75 → 1.00</text>
+<rect x="764" y="349" width="172" height="82" rx="7" fill="#0f172a"/>
+<rect x="764" y="349" width="172" height="82" rx="7" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+<text x="850" y="371" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Compare Rows</text>
+<text x="850" y="389" fill="#94a3b8" font-size="9.0" text-anchor="middle">order-insensitive multiset</text>
+<text x="850" y="404" fill="#94a3b8" font-size="9.0" text-anchor="middle">ordered when gold says so</text>
+<rect x="1084" y="356" width="172" height="67" rx="7" fill="#0f172a"/>
+<rect x="1084" y="356" width="172" height="67" rx="7" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1.5"/>
+<text x="1170" y="378" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">Run BOTH</text>
+<text x="1170" y="396" fill="#94a3b8" font-size="9.0" text-anchor="middle">against a seeded SQLite DB</text>
+<rect x="105" y="579" width="170" height="82" rx="7" fill="#0f172a"/>
+<rect x="105" y="579" width="170" height="82" rx="7" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="190" y="601" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">self-correct = no-op</text>
+<text x="190" y="619" fill="#94a3b8" font-size="9.0" text-anchor="middle">83.3% = zero-shot</text>
+<text x="190" y="634" fill="#94a3b8" font-size="9.0" text-anchor="middle">nothing to catch</text>
+<rect x="525" y="579" width="150" height="82" rx="7" fill="#0f172a"/>
+<rect x="525" y="579" width="150" height="82" rx="7" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1.5"/>
+<text x="600" y="601" fill="#fff" font-size="11.5" font-weight="600" text-anchor="middle">String match lies</text>
+<text x="600" y="619" fill="#94a3b8" font-size="9.0" text-anchor="middle">83% exec vs 25% exact</text>
+<text x="600" y="634" fill="#94a3b8" font-size="9.0" text-anchor="middle">a 58-point gap</text>
+<text x="40" y="727" fill="#fff" font-size="10" font-weight="600">Legend</text>
+<rect x="106" y="718" width="15" height="10" rx="2" fill="rgba(8, 51, 68, 0.4)" stroke="#22d3ee" stroke-width="1"/>
+<text x="126" y="727" fill="#94a3b8" font-size="8.5">Frontend/UI</text>
+<rect x="210.1" y="718" width="15" height="10" rx="2" fill="rgba(6, 78, 59, 0.4)" stroke="#34d399" stroke-width="1"/>
+<text x="230.1" y="727" fill="#94a3b8" font-size="8.5">Backend</text>
+<rect x="293.79999999999995" y="718" width="15" height="10" rx="2" fill="rgba(76, 29, 149, 0.4)" stroke="#a78bfa" stroke-width="1"/>
+<text x="313.79999999999995" y="727" fill="#94a3b8" font-size="8.5">Data/Index</text>
+<rect x="392.79999999999995" y="718" width="15" height="10" rx="2" fill="rgba(120, 53, 15, 0.3)" stroke="#fbbf24" stroke-width="1"/>
+<text x="412.79999999999995" y="727" fill="#94a3b8" font-size="8.5">Model/Cloud</text>
+<rect x="496.9" y="718" width="15" height="10" rx="2" fill="rgba(136, 19, 55, 0.4)" stroke="#fb7185" stroke-width="1"/>
+<text x="516.9" y="727" fill="#94a3b8" font-size="8.5">Eval/Gate</text>
+<rect x="590.8" y="718" width="15" height="10" rx="2" fill="rgba(30, 41, 59, 0.5)" stroke="#94a3b8" stroke-width="1"/>
+<text x="610.8" y="727" fill="#94a3b8" font-size="8.5">External</text>
 </svg></div>
-    <div class="cards"><div class="card"><div class="card-header"><div class="card-dot emerald"></div><h3>NL → SQL</h3></div><ul><li>• Claude Haiku translates the question to SQL</li><li>• few-shot examples with schema + samples</li><li>• optional self-correction pass</li></ul></div><div class="card"><div class="card-header"><div class="card-dot rose"></div><h3>Execution accuracy</h3></div><ul><li>• run generated AND gold SQL on SQLite</li><li>• compare the returned rows, not the strings</li><li>• string match under-counts (83% exec vs 25% exact)</li></ul></div><div class="card"><div class="card-header"><div class="card-dot cyan"></div><h3>Finding</h3></div><ul><li>• real Haiku makes ~no syntax errors</li><li>• so self-correction is a no-op (83.3% → 83.3%)</li><li>• few-shot alone fixes the semantic failures to 100%</li></ul></div></div>
-    <p class="footer">text-to-sql · SQLite · execution-based scoring · Claude on Bedrock/Anthropic · pytest</p>
+    <div class="cards"><div class="card"><div class="card-header"><div class="card-dot violet"></div><h3>Why execution accuracy, not string match</h3></div><ul><li>• a query with a different alias, column order or whitespace string-mismatches the gold query while returning identical rows, and string match calls it wrong</li><li>• worse, a syntactically valid query can return the WRONG rows: a missed join condition becomes a silent cross join</li><li>• only running both queries and comparing result sets tells you whether the SQL is actually correct</li><li>• rows are compared as an order-insensitive multiset, and order-sensitively when the gold query has ORDER BY</li></ul></div><div class="card"><div class="card-header"><div class="card-dot rose"></div><h3>Two failure modes, tagged per question</h3></div><ul><li>• semantic: valid SQL, wrong rows (missed join, aggregating the wrong table). Nothing errors, so a retry cannot catch it, but worked examples teach the right pattern</li><li>• syntax: broken SQL that throws (a FORM typo, a dangling ON). Examples do not reliably prevent a one-off slip, but feeding the error back does</li><li>• the benchmark reports accuracy WITHIN each subset, which is what makes the attribution possible</li></ul></div><div class="card"><div class="card-header"><div class="card-dot cyan"></div><h3>The real model overturned the mock's assumption</h3></div><ul><li>• self-correction was a NO-OP: Claude Haiku made essentially no syntax errors (that subset scored 1.00 even zero-shot), so there was nothing to catch and self_correct tied zero-shot at 83.3%</li><li>• the residual failures were all SEMANTIC, and few-shot examples repaired them, lifting the whole set to 100%</li><li>• the calibrated mock assumed the two failure modes were orthogonal and both fixes were needed; the real model's failures were purely semantic</li><li>• string match under-counts badly: 83% by execution against 25% by exact match, a 58-point gap, so grading by string match understates a good model and picks the wrong winner</li></ul></div></div>
+    <p class="footer">text-to-sql · Claude Haiku 4.5 on AWS Bedrock · SQLite · execution-based scoring · contrasting offline mock</p>
   </div>
 <script>
     async function copyAsImage(btn) {
