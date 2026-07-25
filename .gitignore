@@ -6,3 +6,6 @@ build/
 dist/
 .venv/
 .env
+
+# OS cruft
+.DS_Store
